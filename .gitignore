@@ -1,0 +1,12 @@
+node_modules/
+output/
+outputs/
+.tmp/
+.env
+.env.*
+*.log
+.DS_Store
+playwright-report/
+test-results/
+/screenshots/
+/storage-state*.json

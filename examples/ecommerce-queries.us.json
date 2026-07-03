@@ -1,0 +1,42 @@
+[
+  {
+    "query": "buy 1 get 1 free",
+    "market": "US",
+    "tags": ["bogo", "offer"]
+  },
+  {
+    "query": "free shipping today",
+    "market": "US",
+    "tags": ["shipping", "urgency"]
+  },
+  {
+    "query": "50% off today",
+    "market": "US",
+    "tags": ["discount", "urgency"]
+  },
+  {
+    "query": "shop now limited offer",
+    "market": "US",
+    "tags": ["cta", "urgency"]
+  },
+  {
+    "query": "ends tonight sale",
+    "market": "US",
+    "tags": ["urgency", "discount"]
+  },
+  {
+    "query": "skincare bundle sale",
+    "market": "US",
+    "tags": ["beauty", "bundle"]
+  },
+  {
+    "query": "pet hair remover free shipping",
+    "market": "US",
+    "tags": ["pet", "product"]
+  },
+  {
+    "query": "official store discount",
+    "market": "US",
+    "tags": ["store", "discount"]
+  }
+]

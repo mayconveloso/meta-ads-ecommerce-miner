@@ -1,0 +1,24 @@
+{
+  "name": "meta-ads-ecommerce-miner",
+  "version": "1.0.0",
+  "description": "Playwright-based Meta Ads Library keyword miner for ecommerce ad research.",
+  "main": "src/collect.js",
+  "type": "commonjs",
+  "scripts": {
+    "mine": "node src/collect.js",
+    "analyze": "node src/analyze.js",
+    "smoke": "node src/collect.js --help",
+    "test": "node test/parse.test.js && node src/collect.js --help > /tmp/meta-ads-ecommerce-miner-help.txt"
+  },
+  "keywords": [
+    "meta-ads-library",
+    "facebook-ads-library",
+    "ecommerce",
+    "playwright",
+    "ad-research"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.57.0"
+  }
+}

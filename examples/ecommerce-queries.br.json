@@ -1,0 +1,42 @@
+[
+  {
+    "query": "frete grátis hoje",
+    "market": "BR",
+    "tags": ["shipping", "urgency"]
+  },
+  {
+    "query": "compre agora desconto",
+    "market": "BR",
+    "tags": ["discount", "cta"]
+  },
+  {
+    "query": "últimas unidades promoção",
+    "market": "BR",
+    "tags": ["urgency", "discount"]
+  },
+  {
+    "query": "pague 2 leve 3",
+    "market": "BR",
+    "tags": ["bundle", "offer"]
+  },
+  {
+    "query": "loja oficial promoção",
+    "market": "BR",
+    "tags": ["store", "discount"]
+  },
+  {
+    "query": "kit skincare promoção",
+    "market": "BR",
+    "tags": ["beauty", "bundle"]
+  },
+  {
+    "query": "moda feminina desconto",
+    "market": "BR",
+    "tags": ["fashion", "discount"]
+  },
+  {
+    "query": "pet shop desconto frete grátis",
+    "market": "BR",
+    "tags": ["pet", "shipping"]
+  }
+]

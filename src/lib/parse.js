@@ -50,6 +50,7 @@ function parseStartedRunning(text) {
   const patterns = [
     /Started running on\s+([^\n]+)/i,
     /Come[cç]ou a veicular em\s+([^\n]+)/i,
+    /Veicula[cç][aã]o iniciada em\s+([^\n]+)/i,
     /Iniciou em\s+([^\n]+)/i
   ];
   for (const re of patterns) {
@@ -63,7 +64,9 @@ function parseCreativeCount(text) {
   const patterns = [
     /(\d+)\s+ads? use this creative/i,
     /(\d+)\s+an[uú]ncios? usam este criativo/i,
-    /(\d+)\s+an[uú]ncios? usam esse criativo/i
+    /(\d+)\s+an[uú]ncios? usam esse criativo/i,
+    /(\d+)\s+an[uú]ncios? usam este criativo e este texto/i,
+    /(\d+)\s+an[uú]ncios? usam esse criativo e esse texto/i
   ];
   for (const re of patterns) {
     const match = text.match(re);
@@ -153,7 +156,7 @@ function scoreEcommerce(text, links) {
 
 function parseCardText(text, meta = {}) {
   const normalized = String(text || '').replace(/\r/g, '').trim();
-  const ids = uniq(Array.from(normalized.matchAll(/Library ID:\s*(\d+)/gi)).map((m) => m[1]));
+  const ids = uniq(Array.from(normalized.matchAll(/(?:Library ID|Identificação da biblioteca):\s*(\d+)/gi)).map((m) => m[1]));
   const links = uniq(meta.links || []);
   const images = uniq(meta.images || []);
   const score = scoreEcommerce(normalized, links);

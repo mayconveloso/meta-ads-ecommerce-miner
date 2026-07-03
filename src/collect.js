@@ -138,14 +138,45 @@ async function expandVisibleDetails(page) {
 async function extractRenderedCards(page, queryMeta) {
   const cards = await page.evaluate(() => {
     function uniq(items) { return Array.from(new Set(items.filter(Boolean))); }
-    const hasLibraryId = (el) => /Library ID:\s*\d+/i.test(el.innerText || '');
-    const nodes = Array.from(document.querySelectorAll('div')).filter(hasLibraryId);
-    const minimal = nodes.filter((el) => !Array.from(el.children || []).some(hasLibraryId));
-    return minimal.map((el) => {
-      const links = uniq(Array.from(el.querySelectorAll('a[href]')).map((a) => a.href).filter((href) => href && !href.startsWith('javascript:')));
-      const images = uniq(Array.from(el.querySelectorAll('img[src]')).map((img) => img.src).filter((src) => src && !src.startsWith('data:')));
-      return { text: el.innerText || '', links, images };
-    }).filter((card) => /Library ID:\s*\d+/i.test(card.text));
+    function decodeDestination(href) {
+      try {
+        const url = new URL(href);
+        if (url.hostname === 'l.facebook.com' || url.hostname.endsWith('.facebook.com')) {
+          return url.searchParams.get('u') || href;
+        }
+        return href;
+      } catch (_) {
+        return href;
+      }
+    }
+
+    const cards = [];
+    for (const div of Array.from(document.querySelectorAll('div'))) {
+      const text = (div.innerText || '').trim();
+      const hasId = text.includes('Library ID:') || text.includes('Identificação da biblioteca:');
+      const hasSponsor = text.includes('Sponsored') || text.includes('Patrocinado');
+      if (!hasId || !hasSponsor) continue;
+      const idCount = (text.match(/Library ID:|Identificação da biblioteca:/g) || []).length;
+      if (idCount !== 1) continue;
+      if (text.length > 12000) continue;
+
+      const links = uniq(Array.from(div.querySelectorAll('a[href]'))
+        .map((a) => decodeDestination(a.href))
+        .filter((href) => href && !href.startsWith('javascript:')));
+      const images = uniq(Array.from(div.querySelectorAll('img[src]'))
+        .map((img) => img.src)
+        .filter((src) => src && !src.startsWith('data:')));
+      cards.push({ text, links, images });
+    }
+
+    const seen = new Set();
+    return cards.filter((card) => {
+      const idMatch = card.text.match(/(?:Library ID|Identificação da biblioteca):\s*(\d+)/i);
+      const key = idMatch ? idMatch[1] : card.text.replace(/\s+/g, ' ').slice(0, 320);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   });
 
   const byId = new Map();

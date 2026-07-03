@@ -43,4 +43,24 @@ const summary = buildSummary([parsed], [{ query: 'buy 1 get 1 free', found_cards
 assert.ok(summary.includes('Unique ads: 1'));
 assert.ok(summary.includes('Example Store'));
 
+const ptSample = `
+Identificação da biblioteca: 987654321098765
+Veiculação iniciada em 2 de jan de 2026
+5 anúncios usam esse criativo e esse texto
+Ver detalhes do anúncio
+Loja Exemplo
+Patrocinado
+Últimas unidades com frete grátis. Comprar agora.
+`;
+const ptParsed = parseCardText(ptSample, {
+  query: 'frete grátis hoje',
+  market: 'BR',
+  links: ['https://lojaexemplo.com.br/produto']
+});
+assert.strictEqual(ptParsed.library_id, '987654321098765');
+assert.strictEqual(ptParsed.advertiser, 'Loja Exemplo');
+assert.strictEqual(ptParsed.started_running, '2 de jan de 2026');
+assert.strictEqual(ptParsed.creative_count, 5);
+assert.ok(ptParsed.ecommerce_score >= 8, `PT score was ${ptParsed.ecommerce_score}`);
+
 console.log('parse.test.js passed');

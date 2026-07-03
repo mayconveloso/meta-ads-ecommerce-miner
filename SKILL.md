@@ -43,16 +43,15 @@ npx playwright install chromium --with-deps
 ```bash
 npm run mine -- \
   --queries examples/ecommerce-queries.br.json \
-  --country BR \
-  --days 30 \
-  --max-scrolls 8 \
-  --out output/br-30d
+  --out output/br-90d
 ```
+
+O padrão operacional é Brasil, anúncios ativos, janela de 90 dias, Chromium Linux realista, espera inicial de 8s e scroll por plateau de cards. Isso replica o padrão de coleta de e-commerce que funcionou em ondas da Gape.
 
 ## Processo operacional
 
 1. Comece por 5–10 queries de oferta ampla.
-2. Rode com `--max-scrolls 6` ou `8`.
+2. Rode com o padrão (`--max-scrolls 12`) ou reduza para `6` em smoke tests.
 3. Abra `ads.csv`.
 4. Ordene por `ecommerce_score`.
 5. Recolha frases reais dos melhores anúncios.
@@ -107,8 +106,8 @@ npm run smoke
 Após uma rodada real:
 
 ```bash
-wc -l output/br-30d/ads.jsonl
-head -5 output/br-30d/ads.csv
+wc -l output/br-90d/ads.jsonl
+head -5 output/br-90d/ads.csv
 ```
 
 ## Limitações

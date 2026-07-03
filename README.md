@@ -63,10 +63,7 @@ Se isso imprimir a tela de ajuda do minerador, o projeto está pronto para rodar
 ```bash
 npm run mine -- \
   --queries examples/ecommerce-queries.br.json \
-  --country BR \
-  --days 30 \
-  --max-scrolls 8 \
-  --out output/br-30d
+  --out output/br-90d
 ```
 
 ### Estados Unidos / internacional
@@ -75,9 +72,8 @@ npm run mine -- \
 npm run mine -- \
   --queries examples/ecommerce-queries.us.json \
   --country US \
-  --days 30 \
-  --max-scrolls 8 \
-  --out output/us-30d
+  --days 90 \
+  --out output/us-90d
 ```
 
 ### Query única
@@ -97,7 +93,6 @@ npm run mine -- \
 ```bash
 npm run mine -- \
   --queries examples/ecommerce-queries.br.json \
-  --country BR \
   --headful \
   --slow 150 \
   --out output/debug-br
@@ -139,11 +134,18 @@ Também funciona com uma lista simples de strings:
 |---|---:|---|
 | `--queries` | — | Caminho para JSON com queries |
 | `--query` | — | Uma query manual |
-| `--country` | `ALL` | País da Ads Library: `BR`, `US`, `GB`, `ALL` etc. |
-| `--days` | `30` | Janela de data retroativa |
-| `--active-status` | `all` | `all`, `active` ou `inactive` |
+| `--country` | `BR` | País da Ads Library: `BR`, `US`, `GB`, `ALL` etc. |
+| `--days` | `90` | Janela de data retroativa |
+| `--date-min` | — | Data mínima fixa `YYYY-MM-DD`; substitui o cálculo por `--days` |
+| `--date-max` | hoje | Data máxima fixa `YYYY-MM-DD` |
+| `--active-status` | `active` | `all`, `active` ou `inactive` |
 | `--media-type` | `all` | `all`, `image`, `video`, `memes`, etc. conforme aceito pela Meta |
-| `--max-scrolls` | `8` | Número máximo de scrolls por query |
+| `--max-scrolls` | `12` | Número máximo de scrolls por query |
+| `--initial-wait-ms` | `8000` | Espera inicial para a página renderizar antes do primeiro scrape |
+| `--min-wait-ms` | `1400` | Espera base depois de cada scroll |
+| `--plateau-limit` | `5` | Para quando o número de cards não cresce por N ciclos |
+| `--scroll-pixels` | `3600` | Distância do scroll por ciclo |
+| `--user-agent` | Chrome Linux | User agent customizado, se precisar testar outro navegador |
 | `--min-score` | `1` | Score mínimo para salvar um card |
 | `--limit-per-query` | `0` | Limite de cards por query; `0` = sem limite local |
 | `--out` | `output/run-...` | Pasta de saída |

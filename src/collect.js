@@ -6,18 +6,25 @@ const { parseCardText, toCsv, buildSummary } = require('./lib/parse');
 
 function parseArgs(argv) {
   const args = {
-    country: 'ALL',
-    days: 30,
-    activeStatus: 'all',
+    country: 'BR',
+    days: 90,
+    activeStatus: 'active',
     mediaType: 'all',
-    maxScrolls: 8,
+    maxScrolls: 12,
+    initialWaitMs: 8000,
+    minWaitMs: 1400,
+    plateauLimit: 5,
+    minScrollsBeforePlateau: 5,
+    scrollPixels: 3600,
     minScore: 1,
     limitPerQuery: 0,
     out: null,
     headful: false,
     slow: 0,
     locale: 'pt-BR',
-    timezone: 'America/Sao_Paulo'
+    timezone: 'America/Sao_Paulo',
+    acceptLanguage: 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
   };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
@@ -26,9 +33,16 @@ function parseArgs(argv) {
     else if (token === '--query') args.query = next();
     else if (token === '--country') args.country = next();
     else if (token === '--days') args.days = Number(next());
+    else if (token === '--date-min') args.dateMin = next();
+    else if (token === '--date-max') args.dateMax = next();
     else if (token === '--active-status') args.activeStatus = next();
     else if (token === '--media-type') args.mediaType = next();
     else if (token === '--max-scrolls') args.maxScrolls = Number(next());
+    else if (token === '--initial-wait-ms') args.initialWaitMs = Number(next());
+    else if (token === '--min-wait-ms') args.minWaitMs = Number(next());
+    else if (token === '--plateau-limit') args.plateauLimit = Number(next());
+    else if (token === '--min-scrolls-before-plateau') args.minScrollsBeforePlateau = Number(next());
+    else if (token === '--scroll-pixels') args.scrollPixels = Number(next());
     else if (token === '--min-score') args.minScore = Number(next());
     else if (token === '--limit-per-query') args.limitPerQuery = Number(next());
     else if (token === '--out') args.out = next();
@@ -36,6 +50,8 @@ function parseArgs(argv) {
     else if (token === '--slow') args.slow = Number(next());
     else if (token === '--locale') args.locale = next();
     else if (token === '--timezone') args.timezone = next();
+    else if (token === '--accept-language') args.acceptLanguage = next();
+    else if (token === '--user-agent') args.userAgent = next();
     else if (token === '--help' || token === '-h') args.help = true;
     else throw new Error(`Unknown argument: ${token}`);
   }
@@ -46,22 +62,29 @@ function printHelp() {
   console.log(`Meta Ads Ecommerce Miner
 
 Usage:
-  npm run mine -- --queries examples/ecommerce-queries.br.json --country BR --days 30 --out output/br-30d
+  npm run mine -- --queries examples/ecommerce-queries.br.json --out output/br-90d
   npm run mine -- --query "buy 1 get 1 free" --country US --days 14 --out output/bogo-us
 
 Options:
   --queries <file>          JSON file with query objects or strings
   --query <text>            Single query
-  --country <code>          Ads Library country code, default ALL
-  --days <number>           Lookback window, default 30
-  --active-status <value>   all, active, inactive; default all
+  --country <code>          Ads Library country code, default BR
+  --days <number>           Lookback window, default 90
+  --date-min <YYYY-MM-DD>   Fixed minimum date; overrides --days minimum
+  --date-max <YYYY-MM-DD>   Fixed maximum date; default today
+  --active-status <value>   all, active, inactive; default active
   --media-type <value>      all, image, video, etc.; default all
-  --max-scrolls <number>    Max page scrolls per query, default 8
+  --max-scrolls <number>    Max page scrolls per query, default 12
+  --initial-wait-ms <ms>    Wait after first load, default 8000
+  --min-wait-ms <ms>        Base wait after each scroll, default 1400
+  --plateau-limit <number>  Stop after N card-count plateaus, default 5
+  --scroll-pixels <number>  Mouse wheel distance per scroll, default 3600
   --min-score <number>      Minimum ecommerce score to save, default 1
   --limit-per-query <n>     Local saved-card cap per query, default 0
   --out <dir>               Output directory
   --headful                 Show browser window
   --slow <ms>               Playwright slow motion delay
+  --user-agent <ua>         Browser user agent override
   --help                    Show this help
 `);
 }
@@ -100,8 +123,8 @@ function loadQueries(args) {
 }
 
 function buildAdsLibraryUrl(query, args) {
-  const max = todayYmd(0);
-  const min = todayYmd(-Math.max(1, Number(args.days || 30)));
+  const max = args.dateMax || todayYmd(0);
+  const min = args.dateMin || todayYmd(-Math.max(1, Number(args.days || 90)));
   const params = new URLSearchParams();
   params.set('active_status', args.activeStatus);
   params.set('ad_type', 'all');
@@ -196,13 +219,12 @@ async function collectQuery(page, item, args) {
   console.log(`[url] ${url}`);
 
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
-  await humanWait(page, 1500, 2600);
+  await page.waitForTimeout(args.initialWaitMs);
 
   let bestCards = [];
-  let lastHeight = 0;
   let lastCount = 0;
   let plateaus = 0;
-  for (let i = 0; i <= args.maxScrolls; i += 1) {
+  for (let i = 0; i < args.maxScrolls; i += 1) {
     await expandVisibleDetails(page);
     await humanWait(page, 700, 1200);
     const cards = await extractRenderedCards(page, {
@@ -212,17 +234,14 @@ async function collectQuery(page, item, args) {
       captured_at: new Date().toISOString()
     });
     if (cards.length > bestCards.length) bestCards = cards;
-    const height = await page.evaluate(() => document.body.scrollHeight);
     console.log(`[scroll ${i}/${args.maxScrolls}] rendered cards: ${cards.length}`);
 
-    if (i === args.maxScrolls) break;
-    if (cards.length <= lastCount && height <= lastHeight) plateaus += 1;
+    if (cards.length <= lastCount) plateaus += 1;
     else plateaus = 0;
-    if (plateaus >= 3) break;
-    lastCount = Math.max(lastCount, cards.length);
-    lastHeight = Math.max(lastHeight, height);
-    await page.mouse.wheel(0, 3200);
-    await humanWait(page, 1200, 2300);
+    lastCount = cards.length;
+    if (i >= args.minScrollsBeforePlateau && plateaus >= args.plateauLimit) break;
+    await page.mouse.wheel(0, args.scrollPixels);
+    await page.waitForTimeout(args.minWaitMs + Math.floor(Math.random() * 600));
   }
 
   const filtered = bestCards
@@ -251,20 +270,21 @@ async function main() {
   const summaryPath = path.join(outDir, 'summary.md');
   fs.writeFileSync(jsonlPath, '');
 
-  const browser = await chromium.launch({ headless: !args.headful, slowMo: Number(args.slow || 0) });
+  const browser = await chromium.launch({
+    headless: !args.headful,
+    slowMo: Number(args.slow || 0),
+    args: ['--no-sandbox', '--disable-dev-shm-usage']
+  });
   const context = await browser.newContext({
-    viewport: { width: 1365, height: 920 },
+    viewport: { width: 1365, height: 950 },
     locale: args.locale,
     timezoneId: args.timezone,
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
-  });
-  await context.addInitScript(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-    Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US', 'en'] });
-    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-    window.navigator.chrome = window.navigator.chrome || { runtime: {} };
+    userAgent: args.userAgent,
+    extraHTTPHeaders: { 'Accept-Language': args.acceptLanguage },
+    javaScriptEnabled: true
   });
   const page = await context.newPage();
+  await page.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => false }); });
 
   const seen = new Map();
   const queryStats = [];
